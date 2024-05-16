@@ -51,6 +51,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+REST_FRAMEWORK = {
+    # 'EXCEPTION_HANDLER': 'REST_TUTORIAL.restapp.utils.custom_exception_handler',
+    # 'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+}
+
 ROOT_URLCONF = 'rest_tutorial.urls'
 
 TEMPLATES = [

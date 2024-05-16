@@ -3,7 +3,7 @@ from .models import Carlist
 
 class CarSerializers(serializers.ModelSerializer):
     id = serializers.Serializer(read_only=True)
-    name = serializers.CharField()
+    name = serializers.CharField(required=True)
     description = serializers.CharField()
     active = serializers.BooleanField()
 
