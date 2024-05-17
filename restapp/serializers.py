@@ -1,14 +1,16 @@
 from rest_framework import serializers
-from .models import Carlist , showRoomList
+from .models import Carlist , showRoomList , Review
 
-class showRoomSerializer(serializers.ModelSerializer):
+class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = showRoomList
+        model = Review
         fields = "__all__"
+
 
 
 class CarSerializers(serializers.ModelSerializer):
     discounted_price = serializers.SerializerMethodField()
+    Reviews = ReviewSerializer(many=True,read_only=True)
     class Meta:
         model = Carlist
         fields = "__all__"
@@ -22,11 +24,8 @@ class CarSerializers(serializers.ModelSerializer):
         discountPrice = object.price - 5000
         return discountPrice
 
-
     def create(self, validated_data):
-        return Carlist.objects.create(**validated_data)
-    
-    
+        return Carlist.objects.create(**validated_data)   
     
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
@@ -53,3 +52,11 @@ class CarSerializers(serializers.ModelSerializer):
         return data
         
 
+class showRoomSerializer(serializers.ModelSerializer):
+    # showrooms = CarSerializers(many=True,read_only=True)
+    showrooms = serializers.StringRelatedField(many=True)
+    # showrooms = serializers.PrimaryKeyRelatedField(many=True,read_only=True)
+    # showrooms = serializers.HyperlinkedRelatedField(many=True,read_only=True,view_name='car_detail')
+    class Meta:
+        model = showRoomList
+        fields = "__all__"

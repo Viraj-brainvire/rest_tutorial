@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator , MaxValueValidator
 
 # Create your models here.
 
@@ -24,3 +25,18 @@ class Carlist(models.Model):
     chassisnumber = models.CharField(max_length=100,blank=True,null=True,validators=[alphanumeric])
     price = models.DecimalField(max_digits=9,decimal_places=2,blank=True)
     showroom = models.ForeignKey(showRoomList,on_delete= models.CASCADE,related_name='showrooms',null=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+
+class Review(models.Model):
+    rating = models.IntegerField(validators=[MaxValueValidator,MinValueValidator])
+    comments = models.CharField(max_length=200,null=True)
+    car = models.ForeignKey(Carlist, on_delete=models.CASCADE,related_name="Reviews",null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return 'The Rating of ' + self.car.name +":---"+str(self.rating)
+    
