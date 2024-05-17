@@ -4,10 +4,11 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.throttling import UserRateThrottle
 from rest_framework import status
-from .models import Carlist
-from .serializers import CarSerializers
+from .models import Carlist , showRoomList
+from .serializers import CarSerializers , showRoomSerializer
 from django.http import JsonResponse
-from rest_framework.exceptions import bad_request
+from rest_framework.exceptions import bad_request 
+from rest_framework.views import APIView
 
 # Create your views here.
 
@@ -51,14 +52,75 @@ def car_list(request):
         except:
             return Response({'message':'Error'},status=status.HTTP_400_BAD_REQUEST)
 
-@api_view()
+@api_view(['GET','PUT','DELETE'])
 def car_detail_view(request,pk):
-    try:
-        car = Carlist.objects.get(pk=pk)
+    
+    if request.method == 'GET': 
+        try: 
+            car = Carlist.objects.get(pk=pk)
+        except Exception as e:
+            return Response({"Error":e.args},status=404)
         Serializers = CarSerializers(car)
         return Response(Serializers.data)
-    except Exception as e:
-        return Response({"Error":e.args},status=404)
+    
+    
+   
+    if request.method == 'PUT':
+        car = Carlist.objects.get(pk=pk)
+        Serializers=CarSerializers(car,data=request.data)
+        if Serializers.is_valid():
+            Serializers.save()
+            return Response(Serializers.data)
+        else:
+            return Response(Serializers.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+    if request.method == 'DELETE':
+        car =Carlist.objects.get(pk=pk)
+        car.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        
+class showRoom_view(APIView):
+
+    def get(self,request):
+        showroom = showRoomList.objects.all()
+        serializer = showRoomSerializer(showroom,many=True)
+        return Response(serializer.data)
+    
+    def post(self,request):
+        serializer = showRoomSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+        
+class showRoom_details(APIView):
+    def get(self,request,pk):
+        try:
+            showroom = showRoomList.objects.get(pk=pk)
+        except showRoomList.DoesNotExist:
+            return Response({'Error':'showroom not found'},status=status.HTTP_404_NOT_FOUND)
+        serializer = showRoomSerializer(showroom)
+        return Response(serializer.data)
+    
+    def put(self,request,pk):
+        showroom =showRoomList.objects.get(pk=pk)
+        serializer = showRoomSerializer(showroom,data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else :
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+    def delete(self ,request,pk):
+        showroom = showRoomList.objects.get(pk = pk)
+        showroom.delete()
+        return Response({'Error':'Not found'},status=status.HTTP_204_NO_CONTENT)
+    
+
+        
+
+
     
 
 # @api_view()
