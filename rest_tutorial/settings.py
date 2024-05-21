@@ -52,8 +52,14 @@ MIDDLEWARE = [
 ]
 
 REST_FRAMEWORK = {
-    # 'EXCEPTION_HANDLER': 'REST_TUTORIAL.restapp.utils.custom_exception_handler',
-    # 'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+
+    ],
+    'DEFAULT_PERMISSION_CLASSES':[
+        'rest_framework.permissions.IsAuthenticated',
+    ]
 }
 
 ROOT_URLCONF = 'rest_tutorial.urls'

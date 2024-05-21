@@ -1,16 +1,23 @@
-from django.shortcuts import render 
+from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view ,throttle_classes
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.throttling import UserRateThrottle
-from rest_framework import status
-from .models import Carlist , showRoomList
-from .serializers import CarSerializers , showRoomSerializer
+from rest_framework import status , generics , mixins , viewsets
+from .models import Carlist , showRoomList,Review
+from .serializers import CarSerializers , showRoomSerializer , ReviewSerializer
 from django.http import JsonResponse
 from rest_framework.exceptions import bad_request 
 from rest_framework.views import APIView
+from rest_framework.authentication import SessionAuthentication,BasicAuthentication
+from rest_framework.permissions import IsAuthenticated , IsAdminUser , AllowAny ,DjangoModelPermissions
 
 # Create your views here.
+
+
+    
+   
+
 
 @api_view()
 def home(request):
@@ -52,7 +59,7 @@ def car_list(request):
         except:
             return Response({'message':'Error'},status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET','PUT','DELETE'])
+@api_view(['GET','PUT','DELETE','PATCH'])
 def car_detail_view(request,pk):
     
     if request.method == 'GET': 
@@ -61,8 +68,7 @@ def car_detail_view(request,pk):
         except Exception as e:
             return Response({"Error":e.args},status=404)
         Serializers = CarSerializers(car)
-        return Response(Serializers.data)
-    
+        return Response(Serializers.data)    
     
    
     if request.method == 'PUT':
@@ -74,12 +80,61 @@ def car_detail_view(request,pk):
         else:
             return Response(Serializers.errors,status=status.HTTP_400_BAD_REQUEST)
         
+    if request.method == 'PATCH':
+        car = Carlist.objects.get(pk=pk)
+        Serializers=CarSerializers(car,data=request.data,partial=True)
+        if Serializers.is_valid(raise_exception=True):
+            Serializers.save()
+            return Response(Serializers.data)
+        # else:
+        #     return Response(Serializers.errors,status=status.HTTP_400_BAD_REQUEST)
+        
     if request.method == 'DELETE':
         car =Carlist.objects.get(pk=pk)
         car.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class ShowRoom_viewset(viewsets.ModelViewSet):
+    queryset = showRoomList.objects.all()
+    serializer_class = showRoomSerializer
+    
+    # Creating Viewset
+# class ShowRoom_viewset(viewsets.ViewSet):
+#     def list(self, request):
+#         queryset = showRoomList.objects.all()
+#         serializer = showRoomSerializer(queryset, many=True)
+#         return Response(serializer.data)
+
+#     def retrieve(self, request, pk=None):
+#         queryset = showRoomList.objects.all()
+#         user = get_object_or_404(queryset, pk=pk)
+#         serializer = showRoomSerializer(user)
+#         return Response(serializer.data)
+    
+#     def create(self,request):
+#         serialzer = showRoomSerializer(data=request.data)
+#         if serialzer.is_valid():
+#             serialzer.save()
+#             return Response(serialzer.data)
+#         else:
+#             return Response(serialzer.errors,status=status.HTTP_400_BAD_REQUEST)
         
-class showRoom_view(APIView):
+#     def update(self,request,pk):
+#         showroom =showRoomList.objects.get(pk=pk)
+#         serializer = showRoomSerializer(showroom,data = request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         else :
+#             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+class ShowRoom_view(APIView):
+    # authentication_classes=[BasicAuthentication]
+    # authentication_classes=[SessionAuthentication]
+    # permission_classes=[IsAuthenticated]
+    # permission_classes=[AllowAny]
+    # permission_classes=[IsAdminUser]
+
 
     def get(self,request):
         showroom = showRoomList.objects.all()
@@ -94,8 +149,8 @@ class showRoom_view(APIView):
         else:
             return Response(serializer.errors)
         
-class showRoom_details(APIView):
-    def get(self,request,pk):
+class ShowRoom_details(APIView):
+    def get(self,request:Request,pk):
         try:
             showroom = showRoomList.objects.get(pk=pk)
         except showRoomList.DoesNotExist:
@@ -117,7 +172,51 @@ class showRoom_details(APIView):
         showroom.delete()
         return Response({'Error':'Not found'},status=status.HTTP_204_NO_CONTENT)
     
+    # Mixins
+# class ReviewList_detail(mixins.RetrieveModelMixin,mixins.DestroyModelMixin,generics.GenericAPIView):
+#     queryset=Review.objects.all()
+#     serializer_class=ReviewSerializer
+#     authentication_classes=[SessionAuthentication]
+#     permission_classes=[DjangoModelPermissions]
+    
+#     def get(self,request,*args, **kwargs):
+#         return self.retrieve(request,*args,**kwargs)
+    
+#     def delete(self,request,*args, **kwargs):
+#         return self.destroy(request,*args,**kwargs)
+    
+    # Generic Api
+class ReviewList_detail(generics.RetrieveUpdateDestroyAPIView):
+    queryset=Review.objects.all()
+    serializer_class=ReviewSerializer
+    
 
+# class ReviewList(mixins.ListModelMixin,mixins.CreateModelMixin,generics.GenericAPIView):
+#     queryset = Review.objects.all()
+#     serializer_class = ReviewSerializer
+
+#     def get(self,request,*args, **kwargs):
+#         return self.list(request,*args,**kwargs)
+    
+#     def post(self,request,*args, **kwargs):
+#         return self.create(request,*args,**kwargs)
+
+class ReviewList(generics.ListAPIView):
+    serializer_class=ReviewSerializer
+    def get_queryset(self):
+        pk =self.kwargs['pk']
+        return Review.objects.filter(car=pk)
+
+class Reviewlist(generics.ListAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+
+class Reviewcreate(generics.CreateAPIView):
+    serializer_class = ReviewSerializer
+    def perform_create(self,serializer):
+        pk = self.kwargs['pk']
+        cars = Carlist.objects.get(pk = pk)
+        serializer.save(car=cars)
         
     
 

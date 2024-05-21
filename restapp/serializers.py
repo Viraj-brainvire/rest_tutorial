@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from .models import Carlist , showRoomList , Review
-
+from django.db.models import Q
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = "__all__"
+        exclude = ('car',)
+        # fields = "__all__"
 
 
 
@@ -24,11 +25,11 @@ class CarSerializers(serializers.ModelSerializer):
         discountPrice = object.price - 5000
         return discountPrice
 
-    def create(self, validated_data):
-        return Carlist.objects.create(**validated_data)   
+    # def create(self, validated_data):
+    #     return Carlist.objects.create(**validated_data)   
     
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+    # def update(self, instance, validated_data):
+    #     return super().update(instance, validated_data)
         # instance.name =validated_data.get('name',instance.name)
         # instance.description =validated_data.description('name',instance.description)
         # instance.active =validated_data.get('name',instance.active)        
@@ -47,7 +48,10 @@ class CarSerializers(serializers.ModelSerializer):
 
     # This is object level validation 
     def validate(self,data):
-        if data['name'] == data['description']:
+        namec=data.get('name')
+        descriptionc=data.get('description')
+
+        if namec == descriptionc or Carlist.objects.filter(Q(name=descriptionc)|Q(description=namec)):
             raise serializers.ValidationError("Name and description must be different ")
         return data
         
