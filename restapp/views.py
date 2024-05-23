@@ -9,10 +9,11 @@ from .serializers import CarSerializers , showRoomSerializer , ReviewSerializer
 from django.http import JsonResponse
 from rest_framework.exceptions import bad_request ,ValidationError
 from rest_framework.views import APIView
-from rest_framework.authentication import SessionAuthentication,BasicAuthentication
+from rest_framework.authentication import SessionAuthentication,BasicAuthentication,TokenAuthentication
 from rest_framework.permissions import IsAuthenticated , IsAdminUser , AllowAny ,DjangoModelPermissions
 from django_filters.rest_framework import DjangoFilterBackend 
 from rest_framework.filters import SearchFilter
+from .permission import AdminOrReadOnlyPermission ,ReviewUserorReadOnlypermission
 
 # Create your views here.
 
@@ -201,6 +202,9 @@ class ShowRoom_details(APIView):
 class ReviewList_detail(generics.RetrieveUpdateDestroyAPIView):
     queryset=Review.objects.all()
     serializer_class=ReviewSerializer
+    permission_classes=[ReviewUserorReadOnlypermission]
+    authentication_classes=[TokenAuthentication]
+
     
 
 # class ReviewList(mixins.ListModelMixin,mixins.CreateModelMixin,generics.GenericAPIView):
@@ -222,6 +226,8 @@ class ReviewList(generics.ListAPIView):
 class Reviewlist(generics.ListAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    permission_classes=[AdminOrReadOnlyPermission]
+    authentication_classes=[TokenAuthentication]
 
 class Reviewcreate(generics.CreateAPIView):
 
