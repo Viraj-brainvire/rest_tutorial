@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Carlist , showRoomList , Review
 from django.db.models import Q
 class ReviewSerializer(serializers.ModelSerializer):
+    apiuser = serializers.StringRelatedField(read_only=True)
     class Meta:
         model = Review
         exclude = ('car',)

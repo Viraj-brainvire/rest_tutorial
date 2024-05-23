@@ -7,10 +7,12 @@ from rest_framework import status , generics , mixins , viewsets
 from .models import Carlist , showRoomList,Review
 from .serializers import CarSerializers , showRoomSerializer , ReviewSerializer
 from django.http import JsonResponse
-from rest_framework.exceptions import bad_request 
+from rest_framework.exceptions import bad_request ,ValidationError
 from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication,BasicAuthentication
 from rest_framework.permissions import IsAuthenticated , IsAdminUser , AllowAny ,DjangoModelPermissions
+from django_filters.rest_framework import DjangoFilterBackend 
+from rest_framework.filters import SearchFilter
 
 # Create your views here.
 
@@ -37,27 +39,37 @@ class OncePerDayUserThrottle(UserRateThrottle):
 def view(request):
     return Response({"message": "Hello for today! See you tomorrow!"})
 
-@api_view(['GET','POST'])
-def car_list(request):
-    # data = {
-    #     'cars':list(cars.values()),
-    # } In django
+# @api_view(['GET','POST'])
+# def car_list(request):
+#     # data = {
+#     #     'cars':list(cars.values()),
+#     # } In django
        
-    if request.method == 'GET': 
-        cars = Carlist.objects.all()
-        serializer = CarSerializers(cars,many=True)
-        return Response(serializer.data)
+#     if request.method == 'GET': 
+#         cars = Carlist.objects.all()
+#         serializer = CarSerializers(cars,many=True)
+#         return Response(serializer.data)
        
-    if request.method == 'POST':
-        serializer = CarSerializers(data = request.data)
-        try: 
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data,status=status.HTTP_201_CREATED)
-            # else:
-            #     return Response(status=status.HTTP_400_BAD_REQUEST)
-        except:
-            return Response({'message':'Error'},status=status.HTTP_400_BAD_REQUEST)
+#     if request.method == 'POST':
+#         serializer = CarSerializers(data = request.data)
+#         try: 
+#             if serializer.is_valid(raise_exception=True):
+#                 serializer.save()
+#                 return Response(serializer.data,status=status.HTTP_201_CREATED)
+#             # else:
+#             #     return Response(status=status.HTTP_400_BAD_REQUEST)
+#         except:
+#             return Response({'message':'Error'},status=status.HTTP_400_BAD_REQUEST)
+        
+class car_list(generics.ListCreateAPIView):
+    queryset = Carlist.objects.all()
+    serializer_class=CarSerializers
+    filter_backends = [SearchFilter] 
+    search_fields=['^name']
+    # def get_queryset(self):
+    #     user=self.request.user
+    #     return Carlist.objects.filter(passby=user)
+
 
 @api_view(['GET','PUT','DELETE','PATCH'])
 def car_detail_view(request,pk):
@@ -212,6 +224,18 @@ class Reviewlist(generics.ListAPIView):
     serializer_class = ReviewSerializer
 
 class Reviewcreate(generics.CreateAPIView):
+
+    def get_queryset(self):
+        return Review.objects.all()
+    
+    def perform_create(self,serialzer):
+        pk=self.kwargs['pk']
+        cars = Carlist.objects.get(pk=pk)
+        useredit=self.request.user
+        Review_queryset = Review.objects.filter(car=cars,apiuser=useredit)
+        if Review_queryset.exists():
+            raise ValidationError("You have already reviewd this car ")
+
     serializer_class = ReviewSerializer
     def perform_create(self,serializer):
         pk = self.kwargs['pk']
