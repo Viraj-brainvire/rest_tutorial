@@ -65,6 +65,7 @@ def view(request):
 class car_list(generics.ListCreateAPIView):
     queryset = Carlist.objects.all()
     serializer_class=CarSerializers
+    # filter_backends=[DjangoFilterBackend]
     filter_backends = [SearchFilter] 
     search_fields=['^name']
     # def get_queryset(self):
